@@ -7,15 +7,24 @@
 
 char *user_input;
 
-// トークンの種類
-typedef enum
-{
-    TK_RESERVED, // 記号
-    TK_NUM,      // 整数トークン
-    TK_EOF,      // 入力の終わりを表すトークン
-} TokenKind;
+// 抽象構文木のノードの種類
+typedef enum {
+    ND_ADD, // +
+    ND_SUB, // -
+    ND_MUL, // *
+    ND_DIV, // /
+    ND_NUM, // 整数
+} NodeKind;
 
-typedef struct Token Token;
+typedef struct Node Node; // struct Node を Node という型名で定義
+
+struct Node {
+    NodeKind kind;
+    Node *lhs;
+    Node *rhs;
+    int val;
+};
+
 
 // トークン型
 struct Token
