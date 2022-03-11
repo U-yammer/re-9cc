@@ -63,14 +63,13 @@ void error(char *fmt, ...) {
 bool consume(char op) {
     if (token->kind != TK_RESERVED || token->str[0] != op)
         return false;
-    token = token->next;
+    token = token->next; // 次のトークンへ
     return true;
 }
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
-void expect(char op)
-{
+void expect(char op) {
     if (token->kind != TK_RESERVED || token->str[0] != op)
         error_at(token->str, "数ではありません");
     token = token->next;
@@ -78,8 +77,7 @@ void expect(char op)
 
 // 次のトークンが数値の場合、トークンを1つ読み進めてその数値を返す。
 // それ以外の場合にはエラーを報告する。
-int expect_number()
-{
+int expect_number() {
     if (token->kind != TK_NUM)
         error_at(token->str, "数ではありません");
     int val = token->val;
@@ -87,22 +85,19 @@ int expect_number()
     return val;
 }
 
-bool at_eof()
-{
+bool at_eof() {
     return token->kind == TK_EOF;
 }
 
 // 入力文字列pをトークナイズしてそれを返す
-Token *tokenize(char *p)
-{
+Token *tokenize(char *p) {
     Token head;
     head.next = NULL;
     Token *cur = &head;
 
     while (*p) {
         // 空白文字をスキップ
-        if (isspace(*p))
-        {
+        if (isspace(*p)) {
             p++;
             continue;
         }
@@ -112,8 +107,7 @@ Token *tokenize(char *p)
             continue;
         }
 
-        if (isdigit(*p))
-        {
+        if (isdigit(*p)) {
             cur = new_token(TK_NUM, cur, p);
             cur->val = strtol(p, &p, 10);
             continue;
@@ -127,8 +121,7 @@ Token *tokenize(char *p)
 }
 
 // 新しいトークンを作成してcurに繋げる
-Node *new_token(TokenKind kind, Token *cur, char *str)
-{
+Node *new_token(TokenKind kind, Token *cur, char *str) {
     Token *tok = calloc(1, sizeof(Token));
     tok->kind = kind;
     tok->str = str;
@@ -186,6 +179,7 @@ Node *primary() {
     return new_node_num(expect_number());
 }
 
+// アセンブリを生成する
 void gen(Node *node) {
     if (node->kind == ND_NUM) {
         printf("  push %d\n", node->val);
@@ -245,10 +239,9 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // トークナイズする
     user_input = argv[1];
-    token = tokenize(user_input);
-    Node *node = expr();
+    token = tokenize(user_input); // このtokenはグローバル変数
+    Node *node = expr(); // パース
 
     // アセンブリの前半部分を出力
     printf(".intel_syntax noprefix\n");
