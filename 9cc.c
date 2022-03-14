@@ -6,6 +6,7 @@
 #include <string.h>
 
 char *user_input;
+typedef struct Token Token;
 
 
 // トークンの種類
@@ -14,8 +15,6 @@ typedef enum {
   TK_NUM,      // 整数トークン
   TK_EOF,      // 入力の終わりを表すトークン
 } TokenKind;
-
-typedef struct Token Token;
 
 // トークン型
 struct Token {
@@ -47,6 +46,17 @@ struct Node {
 };
 
 
+void error(char *fmt, ...);
+void error_at(char *loc, char *fmt, ...);
+bool consume(char op);
+int expect_number();
+bool at_eof();
+Token *tokenize(char *p);
+Node *mul();
+Node *expr();
+Node *new_token(TokenKind kind, Token *cur, char *str);
+Node *primary();
+void gen(Node *node);
 
 // エラーを報告するための関数
 // printfと同じ引数を取る
@@ -214,8 +224,7 @@ void gen(Node *node) {
 
 // loc = location
 
-void error_at(char *loc, char *fmt, ...)
-{
+void error_at(char *loc, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
 
@@ -232,8 +241,7 @@ void error_at(char *loc, char *fmt, ...)
 }
 
 // argc = arg count, argv = arg value
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     if (argc != 2) {
         error("引数の個数が正しくありません");
         return 1;
@@ -241,7 +249,7 @@ int main(int argc, char **argv)
 
     user_input = argv[1];
     token = tokenize(user_input); // このtokenはグローバル変数
-    Node *node = expr(); // パース
+    Node *node = expr();          // パース (expr内でtokenを処理している．)
 
     // アセンブリの前半部分を出力
     printf(".intel_syntax noprefix\n");
