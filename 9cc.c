@@ -11,14 +11,16 @@ typedef enum {
     TK_EOF,      // 入力の終わりを表すトークン
 } TokenKind;
 
-typedef struct {
+typedef struct Token Token;
+
+struct Token{
     TokenKind kind; // トークンの型
     Token *next;    // 次の入力トークン
     int val;        // kindがTK_NUMの場合、その数値
     char *str;      // トークン文字列
-} Token;
+};
 
-Token *token;
+Token *token; // メインのtoken...
 
 void error(char *fmt, ...) {
     va_list ap;
@@ -33,7 +35,7 @@ void error(char *fmt, ...) {
 bool consume_token(char op) {
     if (token->kind != TK_RESERVED || token->str[0] != op)
         return false;
-    token = token->next
+    token = token->next;
 
     return true;
 }
@@ -59,8 +61,9 @@ bool at_eof() {
     return token->kind == TK_EOF;
 }
 
+// tokenを引数とし、Tokenを返す。
 Token *new_token(TokenKind kind, Token *cur, char *str) {
-    Token *tok = calloc(1, sizeof(Token))
+    Token *tok = calloc(1, sizeof(Token));
 
     tok->kind = kind;
     tok->str  = str;
@@ -69,6 +72,36 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
     return tok;
 }
 
+Token *tokenize(char *p) {
+    Token head;
+    head.next = NULL;
+    Token *cur = &head;
+
+    while(*p) {
+        if (isspace(*p)) {
+            p++;
+            continue;
+        }
+
+        if (*p == '+' || *p == '-') {
+            cur = new_token(TK_RESERVED, cur, p++);
+            continue;
+        }
+
+        if (isdigit(*p)) {
+            cur = new_token(TK_NUM, cur, p);
+            cur->val = strtol(p, &p, 10);
+
+            continue;
+        }
+
+        error("can not tokenize");
+    }
+
+    new_token(TK_EOF, cur, p);
+
+    return head.next;
+}
 
 
 int main(int argc, char **argv) {
@@ -77,35 +110,27 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *p = argv[1]; // 2番目の引数の最初の文字のポインタ
-
-    // printf("*argv: %s\n", *argv);
-    // printf("*argv: %s\n", *(argv+1));
-    // printf("*argv: %d\n", **(argv+1));
+    // token に する。
+    token = tokenize(argv[1]);
 
     // 前準備、とでもいいます、か。
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
-    printf("  mov rax, %ld\n", strtol(p, &p, 10));
+
+
+    printf("  mov rax, %d\n", expect_number());
     // happy new year
 
-    while (*p) {
-        if (*p == '+') {
-            p++;
-            // printf("p: %s\n", p); // 引数が"5+2-4"のとき，"2-4"
-            printf("  add rax, %ld\n", strtol(p, &p, 10)); // 2が出力され，"-4"の'-'へのポインタがpに格納される．
+    // + or - で、アセンブリ出力 
+    while (!at_eof()) {
+        if (consume_token('+')) {
+            printf("  add rax, %d\n", expect_number()); // 2が出力され，"-4"の'-'へのポインタがpに格納される．
             continue;
         }
 
-        if (*p == '-') {
-            p++;
-            printf("  sub rax, %ld\n", strtol(p, &p, 10));
-            continue;
-        }
-
-        fprintf(stderr, "予期しない文字です: '%c'\n", *p);
-        return 1;
+        expect_token('-');
+        printf("  sub rax, %d\n", expect_number());
     }
 
 
